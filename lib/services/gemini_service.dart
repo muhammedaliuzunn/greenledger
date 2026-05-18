@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 class GeminiService {
   static const String _apiKey = 'GEMINI_API_KEY_REMOVED';
   static const String _baseUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
   // 429 retry mekanizması
   static Future<String> ask(String prompt,
@@ -21,7 +21,7 @@ class GeminiService {
         ],
         'generationConfig': {
           'temperature': 0.7,
-          'maxOutputTokens': 1024,
+          'maxOutputTokens': 2048,
         },
       };
 
