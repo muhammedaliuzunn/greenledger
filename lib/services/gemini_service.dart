@@ -40,17 +40,16 @@ class GeminiService {
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode(body),
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 429) {
-        if (retryCount < 3) {
-          // 5 saniye bekle, tekrar dene
-          await Future.delayed(Duration(seconds: (retryCount + 1) * 5));
+        if (retryCount < 1) {
+          await Future.delayed(const Duration(seconds: 3));
           return ask(prompt,
               systemInstruction: systemInstruction,
               retryCount: retryCount + 1);
         }
-        throw Exception('Çok fazla istek gönderildi. Lütfen biraz bekleyin.');
+        throw Exception('Sunucu meşgul. Lütfen 1 dakika bekleyip tekrar deneyin.');
       }
 
       if (response.statusCode != 200) {
