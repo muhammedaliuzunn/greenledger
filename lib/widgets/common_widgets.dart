@@ -24,44 +24,54 @@ class StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(title, style: Theme.of(context).textTheme.bodySmall),
+                  child: Text(title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall),
                 ),
+                const SizedBox(width: 4),
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 32,
+                  height: 32,
                   decoration: BoxDecoration(
                     color: AppTheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(9),
                   ),
-                  child: Icon(icon, color: AppTheme.primary, size: 18),
+                  child: Icon(icon, color: AppTheme.primary, size: 16),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.spaceGrotesk(
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF0D2617),
                 )),
             if (subtitle != null) ...[
               const SizedBox(height: 2),
-              Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+              Text(subtitle!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall),
             ],
-            if (trend != null) ...[
-              const SizedBox(height: 8),
+            if (trend != null && trend!.isNotEmpty) ...[
+              const SizedBox(height: 6),
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: (trendUp == true ? AppTheme.primary : AppTheme.destructive).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -69,14 +79,19 @@ class StatCard extends StatelessWidget {
                     child: Text(
                       '${trendUp == true ? '↑' : '↓'} $trend',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: FontWeight.w600,
                         color: trendUp == true ? AppTheme.primary : AppTheme.destructive,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  Text('son 30 gün', style: Theme.of(context).textTheme.bodySmall),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text('son 30 gün',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall),
+                  ),
                 ],
               ),
             ],
