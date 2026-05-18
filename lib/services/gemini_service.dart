@@ -6,7 +6,7 @@ import '../secrets.dart';
 class GeminiService {
   static const String _apiKey = geminiApiKey;
   static const String _baseUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
 
   // 429 retry mekanizması
   static Future<String> ask(String prompt,
