@@ -195,9 +195,10 @@ class _GreenScoreTabState extends State<_GreenScoreTab> {
   String? _error;
 
   Future<void> _analyze() async {
+    final lang = context.read<LanguageProvider>().lang;
     setState(() { _loading = true; _error = null; });
     try {
-      final result = await GeminiService.analyzeGreenScore(widget.seller.toJson());
+      final result = await GeminiService.analyzeGreenScore(widget.seller.toJson(), lang: lang);
       setState(() => _result = result);
     } catch (e) {
       setState(() => _error = e.toString().replaceAll('Exception: ', ''));
@@ -208,15 +209,16 @@ class _GreenScoreTabState extends State<_GreenScoreTab> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().lang;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
           if (_result == null && !_loading)
-            _AnalyzeButton(label: 'Sürdürülebilirlik Analizi Yap', icon: Icons.eco, onTap: _analyze),
-          if (_loading) const Padding(
-            padding: EdgeInsets.all(32),
-            child: LoadingWidget(message: 'Gemini analiz yapıyor...'),
+            _AnalyzeButton(label: _t(lang, 'Sürdürülebilirlik Analizi Yap', 'Run Sustainability Analysis'), icon: Icons.eco, onTap: _analyze),
+          if (_loading) Padding(
+            padding: const EdgeInsets.all(32),
+            child: LoadingWidget(message: _t(lang, 'Gemini analiz yapıyor...', 'Gemini is analyzing...')),
           ),
           if (_error != null) _ErrorWidget(message: _error!),
           if (_result != null) ...[
@@ -302,9 +304,10 @@ class _CreditRiskTabState extends State<_CreditRiskTab> {
   String? _error;
 
   Future<void> _analyze() async {
+    final lang = context.read<LanguageProvider>().lang;
     setState(() { _loading = true; _error = null; });
     try {
-      final result = await GeminiService.analyzeCreditRisk(widget.seller.toJson());
+      final result = await GeminiService.analyzeCreditRisk(widget.seller.toJson(), lang: lang);
       setState(() => _result = result);
     } catch (e) {
       setState(() => _error = e.toString().replaceAll('Exception: ', ''));
@@ -315,6 +318,7 @@ class _CreditRiskTabState extends State<_CreditRiskTab> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().lang;
     Color riskColor = AppTheme.primary;
     if (_result != null) {
       if (_result!['risk_seviyesi'] == 'orta') riskColor = AppTheme.accent;
@@ -326,10 +330,10 @@ class _CreditRiskTabState extends State<_CreditRiskTab> {
       child: Column(
         children: [
           if (_result == null && !_loading)
-            _AnalyzeButton(label: 'Kredi Risk Raporu Oluştur', icon: Icons.shield_outlined, onTap: _analyze),
-          if (_loading) const Padding(
-            padding: EdgeInsets.all(32),
-            child: LoadingWidget(message: 'Kredi riski hesaplanıyor...'),
+            _AnalyzeButton(label: _t(lang, 'Kredi Risk Raporu Oluştur', 'Generate Credit Risk Report'), icon: Icons.shield_outlined, onTap: _analyze),
+          if (_loading) Padding(
+            padding: const EdgeInsets.all(32),
+            child: LoadingWidget(message: _t(lang, 'Kredi riski hesaplanıyor...', 'Calculating credit risk...')),
           ),
           if (_error != null) _ErrorWidget(message: _error!),
           if (_result != null) ...[
@@ -456,7 +460,8 @@ class _CoachTabState extends State<_CoachTab> {
     });
     _scroll();
     try {
-      final response = await GeminiService.chatWithCoach(text, widget.seller.toJson());
+      final lang = context.read<LanguageProvider>().lang;
+      final response = await GeminiService.chatWithCoach(text, widget.seller.toJson(), lang: lang);
       setState(() => _messages.add({'role': 'assistant', 'text': response}));
     } catch (e) {
       setState(() => _messages.add({
@@ -612,17 +617,21 @@ class _ReportTabState extends State<_ReportTab> {
   String? _error;
 
   Future<void> _generate() async {
+    final lang = context.read<LanguageProvider>().lang;
+    final isEN = lang == 'EN';
     setState(() { _loading = true; _error = null; });
     try {
       final report = await GeminiService.ask(
-        '''${widget.seller.name} için aylık sürdürülebilirlik raporu:
-Platform: ${widget.seller.platform}, Ciro: ₺${widget.seller.monthlyRevenue}
-GreenScore: ${widget.seller.greenScore}/100, Karbon: ${widget.seller.carbonEmission} kg
-İade: %${widget.seller.returnRate}, Eko Paket: ${widget.seller.ecoPackaging ? 'Evet' : 'Hayır'}
-Yeşil Lojistik: ${widget.seller.ecoLogistics ? 'Evet' : 'Hayır'}
+        '''${isEN ? 'Monthly sustainability report for' : 'için aylık sürdürülebilirlik raporu:'} ${widget.seller.name}:
+${isEN ? 'Platform' : 'Platform'}: ${widget.seller.platform}, ${isEN ? 'Revenue' : 'Ciro'}: ₺${widget.seller.monthlyRevenue}
+GreenScore: ${widget.seller.greenScore}/100, ${isEN ? 'Carbon' : 'Karbon'}: ${widget.seller.carbonEmission} kg
+${isEN ? 'Return rate' : 'İade'}: %${widget.seller.returnRate}, ${isEN ? 'Eco Packaging' : 'Eko Paket'}: ${widget.seller.ecoPackaging ? (isEN ? 'Yes' : 'Evet') : (isEN ? 'No' : 'Hayır')}
+${isEN ? 'Green Logistics' : 'Yeşil Lojistik'}: ${widget.seller.ecoLogistics ? (isEN ? 'Yes' : 'Evet') : (isEN ? 'No' : 'Hayır')}
 
-Bölümler: 1.Özet 2.Çevresel Performans 3.Karbon 4.Fırsatlar 5.Finansal Etki 6.Yol Haritası''',
-        systemInstruction: 'Kısa ve profesyonel Türkçe rapor yaz.',
+${isEN ? 'Sections: 1.Summary 2.Environmental Performance 3.Carbon 4.Opportunities 5.Financial Impact 6.Roadmap' : 'Bölümler: 1.Özet 2.Çevresel Performans 3.Karbon 4.Fırsatlar 5.Finansal Etki 6.Yol Haritası'}''',
+        systemInstruction: isEN
+            ? 'Write a short, professional report in English.'
+            : 'Kısa ve profesyonel Türkçe rapor yaz.',
       );
       setState(() => _report = report);
     } catch (e) {
@@ -634,15 +643,16 @@ Bölümler: 1.Özet 2.Çevresel Performans 3.Karbon 4.Fırsatlar 5.Finansal Etki
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().lang;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
           if (_report == null && !_loading && _error == null)
-            _AnalyzeButton(label: 'Aylık Rapor Oluştur', icon: Icons.description_outlined, onTap: _generate),
-          if (_loading) const Padding(
-            padding: EdgeInsets.all(32),
-            child: LoadingWidget(message: 'Rapor hazırlanıyor...'),
+            _AnalyzeButton(label: _t(lang, 'Aylık Rapor Oluştur', 'Generate Monthly Report'), icon: Icons.description_outlined, onTap: _generate),
+          if (_loading) Padding(
+            padding: const EdgeInsets.all(32),
+            child: LoadingWidget(message: _t(lang, 'Rapor hazırlanıyor...', 'Preparing report...')),
           ),
           if (_error != null) _ErrorWidget(message: _error!),
           if (_report != null) ...[
@@ -675,26 +685,30 @@ class _RoadmapTabState extends State<_RoadmapTab> {
   final Set<String> _completed = {};
 
   Future<void> _generate() async {
+    final lang = context.read<LanguageProvider>().lang;
+    final isEN = lang == 'EN';
     setState(() { _loading = true; _error = null; });
     try {
       final result = await GeminiService.askJSON(
-        '''${widget.seller.name} için sürdürülebilirlik yol haritası:
+        '''${isEN ? 'Sustainability roadmap for' : 'için sürdürülebilirlik yol haritası:'} ${widget.seller.name}:
 GreenScore: ${widget.seller.greenScore}/100
-Platform: ${widget.seller.platform}
-Eko Paket: ${widget.seller.ecoPackaging ? 'Var' : 'Yok'}
-Yeşil Lojistik: ${widget.seller.ecoLogistics ? 'Var' : 'Yok'}
-İade: %${widget.seller.returnRate}
+${isEN ? 'Platform' : 'Platform'}: ${widget.seller.platform}
+${isEN ? 'Eco Packaging' : 'Eko Paket'}: ${widget.seller.ecoPackaging ? (isEN ? 'Yes' : 'Var') : (isEN ? 'No' : 'Yok')}
+${isEN ? 'Green Logistics' : 'Yeşil Lojistik'}: ${widget.seller.ecoLogistics ? (isEN ? 'Yes' : 'Var') : (isEN ? 'No' : 'Yok')}
+${isEN ? 'Return rate' : 'İade'}: %${widget.seller.returnRate}
 
 JSON:
 {
   "ozet": "string",
   "hedef_skor": number,
   "gun_30": {"baslik": "string", "adimlar": ["string","string","string"], "beklenen_etki": "string"},
-  "gun_60": {"baslik": "string", "adimlar": ["string","string","string"], "beklenen_etki": "string"},
-  "gun_90": {"baslik": "string", "adimlar": ["string","string","string"], "beklenen_etki": "string"},
+  "gun_60": {"baslik": "string", "adimlar": ["string","string","string"], "beklened_etki": "string"},
+  "gun_90": {"baslik": "string", "adimlar": ["string","string","string"], "beklened_etki": "string"},
   "rozet": "string"
 }''',
-        systemInstruction: 'Sürdürülebilirlik koçusun. Türkçe, motive edici adımlar ver.',
+        systemInstruction: isEN
+            ? 'You are a sustainability coach. Give motivating steps in English.'
+            : 'Sürdürülebilirlik koçusun. Türkçe, motive edici adımlar ver.',
       );
       setState(() => _roadmap = result);
     } catch (e) {
@@ -706,16 +720,17 @@ JSON:
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().lang;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
           if (_roadmap == null && !_loading && _error == null)
-            _AnalyzeButton(label: '30-60-90 Günlük Yol Haritası Oluştur',
+            _AnalyzeButton(label: _t(lang, '30-60-90 Günlük Yol Haritası Oluştur', 'Generate 30-60-90 Day Roadmap'),
                 icon: Icons.map_outlined, onTap: _generate),
-          if (_loading) const Padding(
-            padding: EdgeInsets.all(32),
-            child: LoadingWidget(message: 'Yol haritanız hazırlanıyor...'),
+          if (_loading) Padding(
+            padding: const EdgeInsets.all(32),
+            child: LoadingWidget(message: _t(lang, 'Yol haritanız hazırlanıyor...', 'Preparing your roadmap...')),
           ),
           if (_error != null) _ErrorWidget(message: _error!),
           if (_roadmap != null) ...[

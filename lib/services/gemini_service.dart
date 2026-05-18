@@ -92,17 +92,18 @@ class GeminiService {
   }
 
   static Future<Map<String, dynamic>> analyzeGreenScore(
-      Map<String, dynamic> seller) async {
+      Map<String, dynamic> seller, {String lang = 'TR'}) async {
+    final isEN = lang == 'EN';
     return askJSON(
-      '''E-ticaret satıcısı sürdürülebilirlik analizi:
-Satıcı: ${seller['name']} (${seller['platform']})
-Ciro: ₺${seller['monthly_revenue'] ?? 0}
+      '''${isEN ? 'E-commerce seller sustainability analysis' : 'E-ticaret satıcısı sürdürülebilirlik analizi'}:
+${isEN ? 'Seller' : 'Satıcı'}: ${seller['name']} (${seller['platform']})
+${isEN ? 'Revenue' : 'Ciro'}: ₺${seller['monthly_revenue'] ?? 0}
 GreenScore: ${seller['green_score'] ?? 0}/100
-Karbon: ${seller['carbon_emission'] ?? 0} kg CO₂
-İade: %${seller['return_rate'] ?? 0}
-Memnuniyet: ${seller['customer_satisfaction'] ?? 0}/5
-Eko Paket: ${seller['eco_packaging'] == true ? 'Evet' : 'Hayır'}
-Yeşil Lojistik: ${seller['eco_logistics'] == true ? 'Evet' : 'Hayır'}
+${isEN ? 'Carbon' : 'Karbon'}: ${seller['carbon_emission'] ?? 0} kg CO₂
+${isEN ? 'Return rate' : 'İade'}: %${seller['return_rate'] ?? 0}
+${isEN ? 'Satisfaction' : 'Memnuniyet'}: ${seller['customer_satisfaction'] ?? 0}/5
+${isEN ? 'Eco Packaging' : 'Eko Paket'}: ${seller['eco_packaging'] == true ? (isEN ? 'Yes' : 'Evet') : (isEN ? 'No' : 'Hayır')}
+${isEN ? 'Green Logistics' : 'Yeşil Lojistik'}: ${seller['eco_logistics'] == true ? (isEN ? 'Yes' : 'Evet') : (isEN ? 'No' : 'Hayır')}
 
 JSON:
 {
@@ -114,22 +115,24 @@ JSON:
   "karbon_azaltma_potansiyeli": "string",
   "faiz_indirimi_potansiyeli": "string"
 }''',
-      systemInstruction:
-          'Sürdürülebilirlik uzmanısın. Kısa ve net Türkçe yanıt ver.',
+      systemInstruction: isEN
+          ? 'You are a sustainability expert. Give short, clear answers in English.'
+          : 'Sürdürülebilirlik uzmanısın. Kısa ve net Türkçe yanıt ver.',
     );
   }
 
   static Future<Map<String, dynamic>> analyzeCreditRisk(
-      Map<String, dynamic> seller) async {
+      Map<String, dynamic> seller, {String lang = 'TR'}) async {
+    final isEN = lang == 'EN';
     return askJSON(
-      '''Kredi risk analizi:
-Satıcı: ${seller['name']} (${seller['platform']})
-Ciro: ₺${seller['monthly_revenue'] ?? 0}
+      '''${isEN ? 'Credit risk analysis' : 'Kredi risk analizi'}:
+${isEN ? 'Seller' : 'Satıcı'}: ${seller['name']} (${seller['platform']})
+${isEN ? 'Revenue' : 'Ciro'}: ₺${seller['monthly_revenue'] ?? 0}
 GreenScore: ${seller['green_score'] ?? 0}/100
-İade: %${seller['return_rate'] ?? 0}
-Memnuniyet: ${seller['customer_satisfaction'] ?? 0}/5
-Eko Paket: ${seller['eco_packaging'] == true ? 'Evet' : 'Hayır'}
-Yeşil Lojistik: ${seller['eco_logistics'] == true ? 'Evet' : 'Hayır'}
+${isEN ? 'Return rate' : 'İade'}: %${seller['return_rate'] ?? 0}
+${isEN ? 'Satisfaction' : 'Memnuniyet'}: ${seller['customer_satisfaction'] ?? 0}/5
+${isEN ? 'Eco Packaging' : 'Eko Paket'}: ${seller['eco_packaging'] == true ? (isEN ? 'Yes' : 'Evet') : (isEN ? 'No' : 'Hayır')}
+${isEN ? 'Green Logistics' : 'Yeşil Lojistik'}: ${seller['eco_logistics'] == true ? (isEN ? 'Yes' : 'Evet') : (isEN ? 'No' : 'Hayır')}
 
 JSON:
 {
@@ -142,7 +145,9 @@ JSON:
   "risk_faktorleri": [{"faktor": "string", "agirlik": "yuksek|orta|dusuk", "durum": "pozitif|negatif"}],
   "6_ay_tahmin": "string"
 }''',
-      systemInstruction: 'Fintech kredi analistisin. Türkçe yanıt ver.',
+      systemInstruction: isEN
+          ? 'You are a fintech credit analyst. Answer in English.'
+          : 'Fintech kredi analistisin. Türkçe yanıt ver.',
     );
   }
 
@@ -152,14 +157,16 @@ JSON:
   }
 
   static Future<String> chatWithCoach(
-      String message, Map<String, dynamic>? seller) async {
+      String message, Map<String, dynamic>? seller, {String lang = 'TR'}) async {
+    final isEN = lang == 'EN';
     final context = seller != null
-        ? 'Satıcı: ${seller['name']}, GreenScore: ${seller['green_score'] ?? 0}, Ciro: ₺${seller['monthly_revenue'] ?? 0}\n'
+        ? '${isEN ? 'Seller' : 'Satıcı'}: ${seller['name']}, GreenScore: ${seller['green_score'] ?? 0}, ${isEN ? 'Revenue' : 'Ciro'}: ₺${seller['monthly_revenue'] ?? 0}\n'
         : '';
     return ask(
-      '$context\nKullanıcı: $message',
-      systemInstruction:
-          'GreenLedger e-ticaret koçusun. Kısa, pratik Türkçe tavsiyeler ver. Max 3 cümle.',
+      '$context\n${isEN ? 'User' : 'Kullanıcı'}: $message',
+      systemInstruction: isEN
+          ? 'You are a GreenLedger e-commerce coach. Give short, practical advice in English. Max 3 sentences.'
+          : 'GreenLedger e-ticaret koçusun. Kısa, pratik Türkçe tavsiyeler ver. Max 3 cümle.',
     );
   }
 }
