@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../services/data_service.dart';
 import '../services/gemini_service.dart';
 import '../widgets/common_widgets.dart';
 import '../theme/app_theme.dart';
+import '../providers/language_provider.dart';
+
+String _t(String lang, String tr, String en) => lang == 'EN' ? en : tr;
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -22,20 +26,21 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   bool _loadingTip = false;
   late TabController _tabCtrl;
 
-  final List<Map<String, dynamic>> _categories = [
+  List<Map<String, dynamic>> _categories(String lang) => [
     {'key': 'green_score', 'label': 'GreenScore', 'icon': Icons.eco},
-    {'key': 'monthly_revenue', 'label': 'Ciro', 'icon': Icons.trending_up},
-    {'key': 'customer_satisfaction', 'label': 'Memnuniyet', 'icon': Icons.star},
-    {'key': 'return_rate', 'label': 'İade', 'icon': Icons.replay},
+    {'key': 'monthly_revenue', 'label': _t(lang, 'Ciro', 'Revenue'), 'icon': Icons.trending_up},
+    {'key': 'customer_satisfaction', 'label': _t(lang, 'Memnuniyet', 'Satisfaction'), 'icon': Icons.star},
+    {'key': 'return_rate', 'label': _t(lang, 'İade', 'Returns'), 'icon': Icons.replay},
   ];
 
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: _categories.length, vsync: this);
+    _tabCtrl = TabController(length: 4, vsync: this);
     _tabCtrl.addListener(() {
       if (!_tabCtrl.indexIsChanging) {
-        setState(() => _sortBy = _categories[_tabCtrl.index]['key']);
+        final cats = _categories('TR');
+        setState(() => _sortBy = cats[_tabCtrl.index]['key'] as String);
       }
     });
     _load();
@@ -66,7 +71,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     return list;
   }
 
-  String _getValue(Seller s) {
+  String _getValue(Seller s, String lang) {
     switch (_sortBy) {
       case 'monthly_revenue':
         return '₺${(s.monthlyRevenue / 1000).toStringAsFixed(0)}K';
@@ -75,7 +80,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       case 'return_rate':
         return '%${s.returnRate}';
       default:
-        return '${s.greenScore.toInt()} puan';
+        return '${s.greenScore.toInt()} ${_t(lang, 'puan', 'pts')}';
     }
   }
 
@@ -98,7 +103,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const LoadingWidget(message: 'Sıralama yükleniyor...');
+    final lang = context.watch<LanguageProvider>().lang;
+    if (_loading) return LoadingWidget(message: _t(lang, 'Sıralama yükleniyor...', 'Loading rankings...'));
 
     final sorted = _sorted;
     final ecoCount = _sellers.where((s) => s.ecoPackaging && s.ecoLogistics).length;
@@ -112,7 +118,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           children: [
-            // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Column(
@@ -121,7 +126,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   Row(
                     children: [
                       Expanded(
-                        child: Text('Yeşil Rekabet',
+                        child: Text(_t(lang, 'Yeşil Rekabet', 'Green Competition'),
                             style: Theme.of(context).textTheme.displayMedium),
                       ),
                       Container(
@@ -136,8 +141,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                               decoration: const BoxDecoration(
                                   color: AppTheme.primary, shape: BoxShape.circle)),
                           const SizedBox(width: 4),
-                          const Text('Canlı',
-                              style: TextStyle(fontSize: 11, color: AppTheme.primary,
+                          Text(_t(lang, 'Canlı', 'Live'),
+                              style: const TextStyle(fontSize: 11, color: AppTheme.primary,
                                   fontWeight: FontWeight.w600)),
                         ]),
                       ),
@@ -145,28 +150,26 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   ),
                   const SizedBox(height: 12),
 
-                  // Stats
                   Row(
                     children: [
-                      Expanded(child: _StatMini(label: 'Toplam', value: '${_sellers.length}')),
+                      Expanded(child: _StatMini(label: _t(lang, 'Toplam', 'Total'), value: '${_sellers.length}')),
                       const SizedBox(width: 8),
-                      Expanded(child: _StatMini(label: 'Tam Eko', value: '$ecoCount',
+                      Expanded(child: _StatMini(label: _t(lang, 'Tam Eko', 'Full Eco'), value: '$ecoCount',
                           color: AppTheme.primary)),
                       const SizedBox(width: 8),
-                      Expanded(child: _StatMini(label: 'Ort. Skor',
+                      Expanded(child: _StatMini(label: _t(lang, 'Ort. Skor', 'Avg Score'),
                           value: avgScore.toInt().toString())),
                     ],
                   ),
                   const SizedBox(height: 12),
 
-                  // Tabs
                   TabBar(
                     controller: _tabCtrl,
                     labelColor: AppTheme.primary,
                     unselectedLabelColor: AppTheme.muted,
                     indicatorColor: AppTheme.primary,
                     labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-                    tabs: _categories.map((c) => Tab(
+                    tabs: _categories(lang).map((c) => Tab(
                       icon: Icon(c['icon'] as IconData, size: 15),
                       text: c['label'] as String,
                     )).toList(),
@@ -176,7 +179,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               ),
             ),
 
-            // Podium
             if (sorted.length >= 3)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -184,16 +186,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Expanded(child: _PodiumCard(
-                        seller: sorted[1], rank: 2, value: _getValue(sorted[1]))),
+                        seller: sorted[1], rank: 2, value: _getValue(sorted[1], lang))),
                     const SizedBox(width: 8),
                     Expanded(child: Transform.translate(
                       offset: const Offset(0, -12),
                       child: _PodiumCard(seller: sorted[0], rank: 1,
-                          value: _getValue(sorted[0]), isFirst: true),
+                          value: _getValue(sorted[0], lang), isFirst: true),
                     )),
                     const SizedBox(width: 8),
                     Expanded(child: _PodiumCard(
-                        seller: sorted[2], rank: 3, value: _getValue(sorted[2]))),
+                        seller: sorted[2], rank: 3, value: _getValue(sorted[2], lang))),
                   ],
                 ),
               ),
@@ -231,7 +233,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
             const SizedBox(height: 12),
 
-            // Full List
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
               child: Card(
@@ -240,7 +241,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     _LeaderRow(
                       rank: entry.key + 1,
                       seller: entry.value,
-                      value: _getValue(entry.value),
+                      value: _getValue(entry.value, lang),
                       onAITip: () => _getAITip(entry.value),
                       loadingTip: _loadingTip,
                     ),
@@ -324,8 +325,8 @@ class _PodiumCard extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 4),
                 decoration: BoxDecoration(
                     color: AppTheme.primary, borderRadius: BorderRadius.circular(8)),
-                child: const Text('LİDER',
-                    style: TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Text(context.watch<LanguageProvider>().lang == 'EN' ? 'LEADER' : 'LİDER',
+                    style: const TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             Container(
               width: isFirst ? 44 : 36,
@@ -436,11 +437,11 @@ class _LeaderRow extends StatelessWidget {
                       decoration: BoxDecoration(
                           color: AppTheme.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6)),
-                      child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(Icons.recycling, size: 9, color: AppTheme.primary),
-                        SizedBox(width: 2),
-                        Text('Tam Eko',
-                            style: TextStyle(fontSize: 8, color: AppTheme.primary)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.recycling, size: 9, color: AppTheme.primary),
+                        const SizedBox(width: 2),
+                        Text(context.watch<LanguageProvider>().lang == 'EN' ? 'Full Eco' : 'Tam Eko',
+                            style: const TextStyle(fontSize: 8, color: AppTheme.primary)),
                       ]),
                     ),
                   ],
@@ -470,8 +471,8 @@ class _LeaderRow extends StatelessWidget {
                             child: CircularProgressIndicator(strokeWidth: 1.5, color: AppTheme.primary))
                         : const Icon(Icons.auto_awesome, size: 9, color: AppTheme.primary),
                     const SizedBox(width: 3),
-                    const Text('AI Tavsiye',
-                        style: TextStyle(fontSize: 9, color: AppTheme.primary)),
+                    Text(context.watch<LanguageProvider>().lang == 'EN' ? 'AI Tip' : 'AI Tavsiye',
+                        style: const TextStyle(fontSize: 9, color: AppTheme.primary)),
                   ]),
                 ),
               ),

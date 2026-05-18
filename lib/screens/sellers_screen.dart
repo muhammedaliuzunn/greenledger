@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../services/data_service.dart';
 import '../widgets/common_widgets.dart';
 import '../theme/app_theme.dart';
 import 'seller_detail_screen.dart';
+import '../providers/language_provider.dart';
+
+String _t(String lang, String tr, String en) => lang == 'EN' ? en : tr;
 
 class SellersScreen extends StatefulWidget {
   final double quickMinScore;
@@ -30,13 +34,6 @@ class _SellersScreenState extends State<SellersScreen> {
 
   final List<String> _platforms = [
     'Tümü', 'trendyol', 'amazon', 'hepsiburada', 'n11', 'etsy'
-  ];
-
-  final List<Map<String, dynamic>> _sortOptions = [
-    {'key': 'green_score', 'label': 'GreenScore'},
-    {'key': 'monthly_revenue', 'label': 'Ciro'},
-    {'key': 'interest_rate', 'label': 'Faiz'},
-    {'key': 'name', 'label': 'İsim'},
   ];
 
   @override
@@ -72,12 +69,18 @@ class _SellersScreenState extends State<SellersScreen> {
     }
   }
 
+  List<Map<String, dynamic>> _sortOptions(String lang) => [
+    {'key': 'green_score', 'label': 'GreenScore'},
+    {'key': 'monthly_revenue', 'label': _t(lang, 'Ciro', 'Revenue')},
+    {'key': 'interest_rate', 'label': _t(lang, 'Faiz', 'Interest')},
+    {'key': 'name', 'label': _t(lang, 'İsim', 'Name')},
+  ];
+
   void _applyFilters() {
     final q = _searchController.text.toLowerCase();
     var list = [..._sellers];
 
-    // Platform filtresi
-    if (_platformFilter != 'Tümü') {
+    if (_platformFilter != 'Tümü' && _platformFilter != 'All') {
       list = list.where((s) => s.platform == _platformFilter).toList();
     }
 
@@ -125,20 +128,21 @@ class _SellersScreenState extends State<SellersScreen> {
   }
 
   Future<void> _deleteSeller(Seller seller) async {
+    final lang = context.read<LanguageProvider>().lang;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Satıcıyı Sil'),
-        content: Text('${seller.name} silinecek. Emin misiniz?'),
+        title: Text(_t(lang, 'Satıcıyı Sil', 'Delete Seller')),
+        content: Text(_t(lang, '${seller.name} silinecek. Emin misiniz?', 'Delete ${seller.name}. Are you sure?')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
+            child: Text(_t(lang, 'İptal', 'Cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppTheme.destructive),
-            child: const Text('Sil'),
+            child: Text(_t(lang, 'Sil', 'Delete')),
           ),
         ],
       ),
@@ -150,7 +154,7 @@ class _SellersScreenState extends State<SellersScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${seller.name} silindi'),
+            content: Text(_t(lang, '${seller.name} silindi', '${seller.name} deleted')),
             backgroundColor: AppTheme.destructive,
           ),
         );
@@ -159,6 +163,7 @@ class _SellersScreenState extends State<SellersScreen> {
   }
 
   void _showFilterSheet() {
+    final lang = context.read<LanguageProvider>().lang;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -175,7 +180,7 @@ class _SellersScreenState extends State<SellersScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Filtrele & Sırala',
+                Text(_t(lang, 'Filtrele & Sırala', 'Filter & Sort'),
                     style: Theme.of(context).textTheme.titleLarge),
                 IconButton(
                     onPressed: () => Navigator.pop(context),
@@ -187,41 +192,44 @@ class _SellersScreenState extends State<SellersScreen> {
             const SizedBox(height: 8),
             Wrap(
               spacing: 8, runSpacing: 8,
-              children: _platforms.map((p) => GestureDetector(
-                onTap: () {
-                  setState(() => _platformFilter = p);
-                  _applyFilters();
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _platformFilter == p
-                        ? AppTheme.primary
-                        : AppTheme.primary.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
+              children: _platforms.map((p) {
+                final displayLabel = p == 'Tümü' ? _t(lang, 'Tümü', 'All') : p;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => _platformFilter = p);
+                    _applyFilters();
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
                       color: _platformFilter == p
                           ? AppTheme.primary
-                          : AppTheme.border,
+                          : AppTheme.primary.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: _platformFilter == p
+                            ? AppTheme.primary
+                            : AppTheme.border,
+                      ),
                     ),
+                    child: Text(displayLabel,
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: _platformFilter == p
+                                ? Colors.white
+                                : AppTheme.primary,
+                            fontWeight: FontWeight.w500)),
                   ),
-                  child: Text(p,
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: _platformFilter == p
-                              ? Colors.white
-                              : AppTheme.primary,
-                          fontWeight: FontWeight.w500)),
-                ),
-              )).toList(),
+                );
+              }).toList(),
             ),
             const SizedBox(height: 16),
-            Text('Sırala', style: Theme.of(context).textTheme.titleSmall),
+            Text(_t(lang, 'Sırala', 'Sort'), style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8, runSpacing: 8,
-              children: _sortOptions.map((o) => GestureDetector(
+              children: _sortOptions(lang).map((o) => GestureDetector(
                 onTap: () {
                   setState(() => _sortBy = o['key']);
                   _applyFilters();
@@ -240,7 +248,7 @@ class _SellersScreenState extends State<SellersScreen> {
                           : AppTheme.border,
                     ),
                   ),
-                  child: Text(o['label'],
+                  child: Text(o['label']!,
                       style: TextStyle(
                           fontSize: 12,
                           color: _sortBy == o['key']
@@ -259,7 +267,8 @@ class _SellersScreenState extends State<SellersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const LoadingWidget(message: 'Satıcılar yükleniyor...');
+    final lang = context.watch<LanguageProvider>().lang;
+    if (_loading) return LoadingWidget(message: _t(lang, 'Satıcılar yükleniyor...', 'Loading sellers...'));
 
     return Scaffold(
       body: RefreshIndicator(
@@ -279,22 +288,21 @@ class _SellersScreenState extends State<SellersScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Satıcılar',
+                            Text(_t(lang, 'Satıcılar', 'Sellers'),
                                 style: Theme.of(context).textTheme.displayMedium),
-                            Text('${_filtered.length}/${_sellers.length} satıcı',
+                            Text('${_filtered.length}/${_sellers.length} ${_t(lang, 'satıcı', 'sellers')}',
                                 style: Theme.of(context).textTheme.bodySmall),
                           ],
                         ),
                         Row(
                           children: [
-                            // Filtre butonu
                             IconButton(
                               onPressed: _showFilterSheet,
                               icon: Stack(
                                 children: [
                                   const Icon(Icons.tune_outlined,
                                       color: AppTheme.primary),
-                                  if (_platformFilter != 'Tümü')
+                                  if (_platformFilter != 'Tümü' && _platformFilter != 'All')
                                     Positioned(
                                       right: 0, top: 0,
                                       child: Container(
@@ -311,7 +319,7 @@ class _SellersScreenState extends State<SellersScreen> {
                             ElevatedButton.icon(
                               onPressed: _showAddDialog,
                               icon: const Icon(Icons.add, size: 18),
-                              label: const Text('Ekle'),
+                              label: Text(_t(lang, 'Ekle', 'Add')),
                             ),
                           ],
                         ),
@@ -320,13 +328,12 @@ class _SellersScreenState extends State<SellersScreen> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: _searchController,
-                      decoration: const InputDecoration(
-                        hintText: 'Satıcı ara...',
-                        prefixIcon: Icon(Icons.search, color: AppTheme.muted),
+                      decoration: InputDecoration(
+                        hintText: _t(lang, 'Satıcı ara...', 'Search sellers...'),
+                        prefixIcon: const Icon(Icons.search, color: AppTheme.muted),
                       ),
                     ),
-                    // Aktif filtreler
-                    if (_platformFilter != 'Tümü') ...[
+                    if (_platformFilter != 'Tümü' && _platformFilter != 'All') ...[
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -373,16 +380,16 @@ class _SellersScreenState extends State<SellersScreen> {
                             const Icon(Icons.store_outlined,
                                 size: 48, color: AppTheme.border),
                             const SizedBox(height: 12),
-                            const Text('Satıcı bulunamadı',
-                                style: TextStyle(color: AppTheme.muted)),
-                            if (_platformFilter != 'Tümü') ...[
+                            Text(_t(lang, 'Satıcı bulunamadı', 'No sellers found'),
+                                style: const TextStyle(color: AppTheme.muted)),
+                            if (_platformFilter != 'Tümü' && _platformFilter != 'All') ...[
                               const SizedBox(height: 8),
                               TextButton(
                                 onPressed: () {
                                   setState(() => _platformFilter = 'Tümü');
                                   _applyFilters();
                                 },
-                                child: const Text('Filtreyi Temizle'),
+                                child: Text(_t(lang, 'Filtreyi Temizle', 'Clear Filter')),
                               ),
                             ],
                           ],
@@ -469,21 +476,26 @@ class _SellerCard extends StatelessWidget {
                     style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 16),
-                ListTile(
-                  leading: const Icon(Icons.delete_outline,
-                      color: AppTheme.destructive),
-                  title: const Text('Satıcıyı Sil',
-                      style: TextStyle(color: AppTheme.destructive)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    onDelete();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.close, color: AppTheme.muted),
-                  title: const Text('İptal'),
-                  onTap: () => Navigator.pop(context),
-                ),
+                Builder(builder: (ctx) {
+                  final l = ctx.watch<LanguageProvider>().lang;
+                  return Column(children: [
+                    ListTile(
+                      leading: const Icon(Icons.delete_outline,
+                          color: AppTheme.destructive),
+                      title: Text(_t(l, 'Satıcıyı Sil', 'Delete Seller'),
+                          style: const TextStyle(color: AppTheme.destructive)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        onDelete();
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.close, color: AppTheme.muted),
+                      title: Text(_t(l, 'İptal', 'Cancel')),
+                      onTap: () => Navigator.pop(context),
+                    ),
+                  ]);
+                }),
               ],
             ),
           ),
@@ -612,6 +624,7 @@ class _AddSellerSheetState extends State<_AddSellerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().lang;
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -627,7 +640,7 @@ class _AddSellerSheetState extends State<_AddSellerSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Yeni Satıcı Ekle',
+                Text(_t(lang, 'Yeni Satıcı Ekle', 'Add New Seller'),
                     style: Theme.of(context).textTheme.titleLarge),
                 IconButton(
                     onPressed: () => Navigator.pop(context),
@@ -637,7 +650,7 @@ class _AddSellerSheetState extends State<_AddSellerSheet> {
             const SizedBox(height: 16),
             TextField(
                 controller: _nameCtrl,
-                decoration: const InputDecoration(labelText: 'Mağaza Adı *')),
+                decoration: InputDecoration(labelText: _t(lang, 'Mağaza Adı *', 'Store Name *'))),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
               value: _platform,
@@ -651,43 +664,43 @@ class _AddSellerSheetState extends State<_AddSellerSheet> {
             TextField(
               controller: _revenueCtrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Aylık Ciro (₺)'),
+              decoration: InputDecoration(labelText: _t(lang, 'Aylık Ciro (₺)', 'Monthly Revenue (₺)')),
             ),
             const SizedBox(height: 10),
             Row(children: [
               Expanded(child: TextField(
                 controller: _ordersCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Sipariş Sayısı'),
+                decoration: InputDecoration(labelText: _t(lang, 'Sipariş Sayısı', 'Order Count')),
               )),
               const SizedBox(width: 10),
               Expanded(child: TextField(
                 controller: _returnCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'İade Oranı (%)'),
+                decoration: InputDecoration(labelText: _t(lang, 'İade Oranı (%)', 'Return Rate (%)')),
               )),
             ]),
             const SizedBox(height: 10),
             TextField(
               controller: _satisfactionCtrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                  labelText: 'Müşteri Memnuniyeti (1-5)'),
+              decoration: InputDecoration(
+                  labelText: _t(lang, 'Müşteri Memnuniyeti (1-5)', 'Customer Satisfaction (1-5)')),
             ),
             const SizedBox(height: 10),
             SwitchListTile(
               value: _ecoPackaging,
               onChanged: (v) => setState(() => _ecoPackaging = v),
-              title: const Text('Çevreci Paketleme',
-                  style: TextStyle(fontSize: 14)),
+              title: Text(_t(lang, 'Çevreci Paketleme', 'Eco Packaging'),
+                  style: const TextStyle(fontSize: 14)),
               activeColor: AppTheme.primary,
               contentPadding: EdgeInsets.zero,
             ),
             SwitchListTile(
               value: _ecoLogistics,
               onChanged: (v) => setState(() => _ecoLogistics = v),
-              title: const Text('Yeşil Lojistik',
-                  style: TextStyle(fontSize: 14)),
+              title: Text(_t(lang, 'Yeşil Lojistik', 'Green Logistics'),
+                  style: const TextStyle(fontSize: 14)),
               activeColor: AppTheme.primary,
               contentPadding: EdgeInsets.zero,
             ),
@@ -696,7 +709,7 @@ class _AddSellerSheetState extends State<_AddSellerSheet> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _saving ? null : _save,
-                child: Text(_saving ? 'Kaydediliyor...' : 'Satıcı Ekle'),
+                child: Text(_saving ? _t(lang, 'Kaydediliyor...', 'Saving...') : _t(lang, 'Satıcı Ekle', 'Add Seller')),
               ),
             ),
           ],

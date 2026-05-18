@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../services/data_service.dart';
 import '../widgets/common_widgets.dart';
 import '../theme/app_theme.dart';
+import '../providers/language_provider.dart';
+
+String _t(String lang, String tr, String en) => lang == 'EN' ? en : tr;
 
 class CreditsScreen extends StatefulWidget {
   const CreditsScreen({super.key});
@@ -57,7 +61,8 @@ class _CreditsScreenState extends State<CreditsScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const LoadingWidget(message: 'Başvurular yükleniyor...');
+    final lang = context.watch<LanguageProvider>().lang;
+    if (_loading) return LoadingWidget(message: _t(lang, 'Başvurular yükleniyor...', 'Loading applications...'));
 
     return Scaffold(
       body: RefreshIndicator(
@@ -71,10 +76,10 @@ class _CreditsScreenState extends State<CreditsScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Kredi & Faktoring',
+                    Text(_t(lang, 'Kredi & Faktoring', 'Credit & Factoring'),
                         style: Theme.of(context).textTheme.displayMedium),
                     Text(
-                      'Toplam: ₺${(_totalAmount / 1000000).toStringAsFixed(1)}M · Kullandırılan: ₺${(_disbursed / 1000000).toStringAsFixed(1)}M',
+                      '${_t(lang, 'Toplam', 'Total')}: ₺${(_totalAmount / 1000000).toStringAsFixed(1)}M · ${_t(lang, 'Kullandırılan', 'Disbursed')}: ₺${(_disbursed / 1000000).toStringAsFixed(1)}M',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 16),
@@ -85,9 +90,9 @@ class _CreditsScreenState extends State<CreditsScreen>
                       indicatorColor: AppTheme.primary,
                       onTap: (_) => setState(() {}),
                       tabs: [
-                        Tab(text: 'Tümü (${_apps.length})'),
-                        const Tab(text: 'Kredi'),
-                        const Tab(text: 'Faktoring'),
+                        Tab(text: '${_t(lang, 'Tümü', 'All')} (${_apps.length})'),
+                        Tab(text: _t(lang, 'Kredi', 'Credit')),
+                        Tab(text: _t(lang, 'Faktoring', 'Factoring')),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -150,11 +155,13 @@ class _CreditCard extends StatelessWidget {
                       style: const TextStyle(
                           fontSize: 14, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 3),
-                  Text(
-                    '${app.type == 'factoring' ? 'Smart Faktoring' : 'Yeşil Kredi'} · ${app.termDays}g · GS:${app.greenScoreAtTime.toInt()}',
-                    style: const TextStyle(
-                        fontSize: 11, color: AppTheme.muted),
-                  ),
+                  Builder(builder: (ctx) {
+                    final l = ctx.watch<LanguageProvider>().lang;
+                    return Text(
+                      '${app.type == 'factoring' ? _t(l, 'Smart Faktoring', 'Smart Factoring') : _t(l, 'Yeşil Kredi', 'Green Credit')} · ${app.termDays}${_t(l, 'g', 'd')} · GS:${app.greenScoreAtTime.toInt()}',
+                      style: const TextStyle(fontSize: 11, color: AppTheme.muted),
+                    );
+                  }),
                   if (app.createdDate != null) ...[
                     const SizedBox(height: 2),
                     Text(
@@ -175,9 +182,11 @@ class _CreditCard extends StatelessWidget {
                       fontSize: 14, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 3),
-                Text('%${app.interestRate} faiz',
-                    style: const TextStyle(
-                        fontSize: 10, color: AppTheme.muted)),
+                Builder(builder: (ctx) {
+                  final l = ctx.watch<LanguageProvider>().lang;
+                  return Text('%${app.interestRate} ${_t(l, 'faiz', 'interest')}',
+                      style: const TextStyle(fontSize: 10, color: AppTheme.muted));
+                }),
                 const SizedBox(height: 4),
                 StatusBadge(status: app.status),
               ],

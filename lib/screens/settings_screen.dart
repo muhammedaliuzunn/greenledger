@@ -4,9 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
 import '../providers/theme_provider.dart';
+import '../providers/language_provider.dart';
 import '../widgets/help_sheet.dart';
 import 'login_screen.dart';
 import 'role_selection_screen.dart';
+
+String _t(String lang, String tr, String en) => lang == 'EN' ? en : tr;
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -37,20 +40,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _logout() async {
+    final lang = context.read<LanguageProvider>().lang;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Çıkış Yap',
+        title: Text(_t(lang, 'Çıkış Yap', 'Sign Out'),
             style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.bold)),
-        content: const Text('Hesabınızdan çıkmak istediğinize emin misiniz?'),
+        content: Text(_t(lang, 'Hesabınızdan çıkmak istediğinize emin misiniz?', 'Are you sure you want to sign out?')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('İptal')),
+              child: Text(_t(lang, 'İptal', 'Cancel'))),
           TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Çıkış Yap',
-                  style: TextStyle(color: AppTheme.destructive))),
+              child: Text(_t(lang, 'Çıkış Yap', 'Sign Out'),
+                  style: const TextStyle(color: AppTheme.destructive))),
         ],
       ),
     );
@@ -81,7 +85,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _notifications = value);
   }
 
-  String get _roleLabel => _role == 'seller' ? 'Satıcı' : 'Alıcı Platform';
+  String _roleLabel(String lang) => _role == 'seller' ? _t(lang, 'Satıcı', 'Seller') : _t(lang, 'Alıcı Platform', 'Buyer Platform');
   IconData get _roleIcon =>
       _role == 'seller' ? Icons.store_outlined : Icons.account_balance_outlined;
 
@@ -89,10 +93,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
     final isDark = themeProvider.isDark;
+    final lang = context.watch<LanguageProvider>().lang;
+    final roleLabel = _roleLabel(lang);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Hesabım',
+        title: Text(_t(lang, 'Hesabım', 'My Account'),
             style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
@@ -100,11 +106,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _ProfileCard(email: _email, role: _roleLabel, roleIcon: _roleIcon),
+            _ProfileCard(email: _email, role: roleLabel, roleIcon: _roleIcon),
 
             const SizedBox(height: 24),
 
-            _SectionLabel(title: 'TERCİHLER'),
+            _SectionLabel(title: _t(lang, 'TERCİHLER', 'PREFERENCES')),
             const SizedBox(height: 8),
             Card(
               child: Column(
@@ -113,10 +119,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: isDark
                         ? Icons.light_mode_outlined
                         : Icons.dark_mode_outlined,
-                    title: isDark ? 'Aydınlık Mod' : 'Koyu Mod',
+                    title: isDark ? _t(lang, 'Aydınlık Mod', 'Light Mode') : _t(lang, 'Koyu Mod', 'Dark Mode'),
                     subtitle: isDark
-                        ? 'Açık temaya geçmek için tıklayın'
-                        : 'Koyu temaya geçmek için tıklayın',
+                        ? _t(lang, 'Açık temaya geçmek için tıklayın', 'Tap to switch to light theme')
+                        : _t(lang, 'Koyu temaya geçmek için tıklayın', 'Tap to switch to dark theme'),
                     trailing: Switch(
                       value: isDark,
                       onChanged: (_) => themeProvider.toggle(),
@@ -126,8 +132,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Divider(height: 1, indent: 56, endIndent: 16),
                   _SettingsTile(
                     icon: Icons.notifications_outlined,
-                    title: 'Bildirimler',
-                    subtitle: 'Kredi ve GreenScore uyarıları',
+                    title: _t(lang, 'Bildirimler', 'Notifications'),
+                    subtitle: _t(lang, 'Kredi ve GreenScore uyarıları', 'Credit and GreenScore alerts'),
                     trailing: Switch(
                       value: _notifications,
                       onChanged: _toggleNotifications,
@@ -140,15 +146,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             const SizedBox(height: 20),
 
-            _SectionLabel(title: 'HESAP'),
+            _SectionLabel(title: _t(lang, 'HESAP', 'ACCOUNT')),
             const SizedBox(height: 8),
             Card(
               child: Column(
                 children: [
                   _SettingsTile(
                     icon: _roleIcon,
-                    title: 'Rolüm',
-                    subtitle: _roleLabel,
+                    title: _t(lang, 'Rolüm', 'My Role'),
+                    subtitle: roleLabel,
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -159,7 +165,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             color: AppTheme.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text(_roleLabel,
+                          child: Text(roleLabel,
                               style: const TextStyle(
                                   fontSize: 11,
                                   color: AppTheme.primary,
@@ -175,7 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Divider(height: 1, indent: 56, endIndent: 16),
                   _SettingsTile(
                     icon: Icons.email_outlined,
-                    title: 'E-posta',
+                    title: _t(lang, 'E-posta', 'Email'),
                     subtitle: _email,
                     trailing: const Icon(Icons.arrow_forward_ios,
                         size: 14, color: AppTheme.muted),
@@ -183,20 +189,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Divider(height: 1, indent: 56, endIndent: 16),
                   _SettingsTile(
                     icon: Icons.lock_outlined,
-                    title: 'Şifre',
-                    subtitle: 'Şifrenizi güncelleyin',
+                    title: _t(lang, 'Şifre', 'Password'),
+                    subtitle: _t(lang, 'Şifrenizi güncelleyin', 'Update your password'),
                     trailing: const Icon(Icons.arrow_forward_ios,
                         size: 14, color: AppTheme.muted),
                     onTap: () => showDialog(
                       context: context,
                       builder: (_) => AlertDialog(
-                        title: const Text('Şifre Güncelle'),
-                        content: const Text(
-                            'Şifre güncelleme özelliği yakında aktif olacak.'),
+                        title: Text(_t(lang, 'Şifre Güncelle', 'Update Password')),
+                        content: Text(_t(lang,
+                            'Şifre güncelleme özelliği yakında aktif olacak.',
+                            'Password update feature coming soon.')),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context),
-                            child: const Text('Tamam'),
+                            child: Text(_t(lang, 'Tamam', 'OK')),
                           ),
                         ],
                       ),
@@ -208,15 +215,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             const SizedBox(height: 20),
 
-            _SectionLabel(title: 'UYGULAMA'),
+            _SectionLabel(title: _t(lang, 'UYGULAMA', 'APP')),
             const SizedBox(height: 8),
             Card(
               child: Column(
                 children: [
                   _SettingsTile(
                     icon: Icons.help_outline,
-                    title: 'Nasıl Kullanılır',
-                    subtitle: 'Ekran bazlı rehber',
+                    title: _t(lang, 'Nasıl Kullanılır', 'How to Use'),
+                    subtitle: _t(lang, 'Ekran bazlı rehber', 'Screen-based guide'),
                     trailing: const Icon(Icons.arrow_forward_ios,
                         size: 14, color: AppTheme.muted),
                     onTap: () => showHelpSheet(context),
@@ -224,8 +231,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Divider(height: 1, indent: 56, endIndent: 16),
                   _SettingsTile(
                     icon: Icons.info_outline,
-                    title: 'GreenLedger Hakkında',
-                    subtitle: 'v1.0.0 · Sürdürülebilir Finans Platformu',
+                    title: _t(lang, 'GreenLedger Hakkında', 'About GreenLedger'),
+                    subtitle: _t(lang, 'v1.0.0 · Sürdürülebilir Finans Platformu', 'v1.0.0 · Sustainable Finance Platform'),
                     trailing: const Icon(Icons.arrow_forward_ios,
                         size: 14, color: AppTheme.muted),
                     onTap: () => showAboutDialog(
@@ -242,9 +249,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child:
                             const Icon(Icons.eco, color: Colors.white, size: 28),
                       ),
-                      children: const [
-                        Text(
-                            'Sürdürülebilir Finans Platformu\nGemini AI ile güçlendirilmiş yeşil finansman çözümleri.'),
+                      children: [
+                        Text(_t(lang,
+                            'Sürdürülebilir Finans Platformu\nGemini AI ile güçlendirilmiş yeşil finansman çözümleri.',
+                            'Sustainable Finance Platform\nGreen financing solutions powered by Gemini AI.')),
                       ],
                     ),
                   ),
@@ -260,8 +268,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onPressed: _logout,
                 icon: const Icon(Icons.logout, size: 18,
                     color: AppTheme.destructive),
-                label: const Text('Çıkış Yap',
-                    style: TextStyle(
+                label: Text(_t(lang, 'Çıkış Yap', 'Sign Out'),
+                    style: const TextStyle(
                         color: AppTheme.destructive,
                         fontWeight: FontWeight.w600)),
                 style: OutlinedButton.styleFrom(

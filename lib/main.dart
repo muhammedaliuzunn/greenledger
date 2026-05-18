@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/theme_provider.dart';
+import 'providers/language_provider.dart';
 import 'services/notification_service.dart';
 import 'services/data_service.dart';
 import 'models/models.dart';
@@ -26,8 +27,11 @@ void main() async {
     statusBarIconBrightness: Brightness.dark,
   ));
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
+      ],
       child: const GreenLedgerApp(),
     ),
   );
@@ -682,14 +686,15 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _loadLang() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (mounted) setState(() => _lang = prefs.getString('app_lang') ?? 'TR');
+    final lang = context.read<LanguageProvider>().lang;
+    if (mounted) setState(() => _lang = lang);
   }
 
   Future<void> _setLang(String lang) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('app_lang', lang);
-    if (mounted) setState(() => _lang = lang);
+    if (mounted) {
+      setState(() => _lang = lang);
+      context.read<LanguageProvider>().setLang(lang);
+    }
   }
 
   List<Widget> get _screens => [

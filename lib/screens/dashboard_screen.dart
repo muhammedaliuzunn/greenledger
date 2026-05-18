@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 import '../models/badge_model.dart';
@@ -8,6 +9,9 @@ import '../services/data_service.dart';
 import '../widgets/common_widgets.dart';
 import '../theme/app_theme.dart';
 import '../services/notification_service.dart';
+import '../providers/language_provider.dart';
+
+String _t(String lang, String tr, String en) => lang == 'EN' ? en : tr;
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -99,7 +103,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const LoadingWidget(message: 'Veriler yükleniyor...');
+    final lang = context.watch<LanguageProvider>().lang;
+    if (_loading) return LoadingWidget(message: _t(lang, 'Veriler yükleniyor...', 'Loading data...'));
 
     return RefreshIndicator(
       color: AppTheme.primary,
@@ -124,14 +129,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 20),
             ],
 
-            // Stats Grid
-            _buildStatsGrid(),
+            _buildStatsGrid(lang),
             const SizedBox(height: 24),
 
-            // Karbon Takip
             SectionHeader(
-                title: 'Karbon Takip',
-                subtitle: 'Türkiye e-ticaret karbon izi'),
+                title: _t(lang, 'Karbon Takip', 'Carbon Tracking'),
+                subtitle: _t(lang, 'Türkiye e-ticaret karbon izi', 'Turkey e-commerce carbon footprint')),
             const SizedBox(height: 12),
             Card(
               child: Padding(
@@ -142,19 +145,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _CarbonMetric(
-                            label: 'Toplam CO₂',
+                            label: _t(lang, 'Toplam CO₂', 'Total CO₂'),
                             value: '${(_totalCarbon / 1000).toStringAsFixed(1)}t',
                             icon: Icons.cloud_outlined),
                         _CarbonMetric(
-                            label: 'Eko Paket',
+                            label: _t(lang, 'Eko Paket', 'Eco Pack'),
                             value: '${_sellers.where((s) => s.ecoPackaging).length}/${_sellers.length}',
                             icon: Icons.recycling),
                         _CarbonMetric(
-                            label: 'Yeşil Kargo',
+                            label: _t(lang, 'Yeşil Kargo', 'Green Ship'),
                             value: '${_sellers.where((s) => s.ecoLogistics).length}/${_sellers.length}',
                             icon: Icons.local_shipping_outlined),
                         _CarbonMetric(
-                            label: 'Ağaç',
+                            label: _t(lang, 'Ağaç', 'Trees'),
                             value: '${(_totalCarbon / 21).toInt()}',
                             icon: Icons.park),
                       ],
@@ -221,11 +224,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _LegendDot(color: AppTheme.primary, label: 'Eko Satıcı'),
+                        _LegendDot(color: AppTheme.primary, label: _t(lang, 'Eko Satıcı', 'Eco Seller')),
                         const SizedBox(width: 16),
                         _LegendDot(
                             color: AppTheme.destructive.withOpacity(0.7),
-                            label: 'Standart'),
+                            label: _t(lang, 'Standart', 'Standard')),
                       ],
                     ),
                   ],
@@ -235,9 +238,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             const SizedBox(height: 24),
 
-            // Ciro Trendi
             SectionHeader(
-                title: 'Ciro & Karbon Trendi', subtitle: 'Son 6 ay'),
+                title: _t(lang, 'Ciro & Karbon Trendi', 'Revenue & Carbon Trend'),
+                subtitle: _t(lang, 'Son 6 ay', 'Last 6 months')),
             const SizedBox(height: 12),
             Card(
               child: Padding(
@@ -264,9 +267,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           sideTitles: SideTitles(
                             showTitles: true,
                             getTitlesWidget: (value, _) {
-                              const months = [
-                                'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz'
-                              ];
+                              final months = lang == 'EN'
+                                  ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+                                  : ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz'];
                               if (value.toInt() < months.length) {
                                 return Text(months[value.toInt()],
                                     style: const TextStyle(
@@ -318,8 +321,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 24),
 
             SectionHeader(
-                title: 'En Yeşil Satıcılar',
-                subtitle: 'GreenScore sıralaması'),
+                title: _t(lang, 'En Yeşil Satıcılar', 'Top Green Sellers'),
+                subtitle: _t(lang, 'GreenScore sıralaması', 'GreenScore ranking')),
             const SizedBox(height: 12),
             Card(
               child: Column(
@@ -337,8 +340,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 24),
 
             SectionHeader(
-                title: 'Son Başvurular',
-                subtitle: 'Kredi ve faktoring'),
+                title: _t(lang, 'Son Başvurular', 'Recent Applications'),
+                subtitle: _t(lang, 'Kredi ve faktoring', 'Credit and factoring')),
             const SizedBox(height: 12),
             Card(
               child: Column(
@@ -356,7 +359,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildStatsGrid() {
+  Widget _buildStatsGrid(String lang) {
     if (_role == 'seller' && _myStore != null) {
       final store = _myStore!;
       return GridView.count(
@@ -368,30 +371,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
         physics: const NeverScrollableScrollPhysics(),
         children: [
           StatCard(
-              title: 'Aylık Ciro',
+              title: _t(lang, 'Aylık Ciro', 'Monthly Revenue'),
               value: '₺${(store.monthlyRevenue / 1000).toStringAsFixed(0)}K',
-              subtitle: '${store.totalOrders} sipariş',
+              subtitle: '${store.totalOrders} ${_t(lang, 'sipariş', 'orders')}',
               icon: Icons.trending_up,
               trend: '%12.5',
               trendUp: true),
           StatCard(
               title: 'GreenScore',
               value: store.greenScore.toInt().toString(),
-              subtitle: 'Eko performans',
+              subtitle: _t(lang, 'Eko performans', 'Eco performance'),
               icon: Icons.eco_outlined,
               trend: '%4.1',
               trendUp: true),
           StatCard(
-              title: 'Kredi Limiti',
+              title: _t(lang, 'Kredi Limiti', 'Credit Limit'),
               value: '₺${(store.creditLimit / 1000).toStringAsFixed(0)}K',
-              subtitle: '%${store.interestRate} faiz',
+              subtitle: '%${store.interestRate} ${_t(lang, 'faiz', 'interest')}',
               icon: Icons.credit_card_outlined,
               trend: '',
               trendUp: true),
           StatCard(
-              title: 'Karbon İzi',
+              title: _t(lang, 'Karbon İzi', 'Carbon Footprint'),
               value: '${(store.carbonEmission / 1000).toStringAsFixed(1)}t',
-              subtitle: 'Aylık CO₂',
+              subtitle: _t(lang, 'Aylık CO₂', 'Monthly CO₂'),
               icon: Icons.co2_outlined,
               trend: '%8.3',
               trendUp: false),
@@ -408,30 +411,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
       physics: const NeverScrollableScrollPhysics(),
       children: [
         StatCard(
-            title: 'Toplam Ciro',
+            title: _t(lang, 'Toplam Ciro', 'Total Revenue'),
             value: '₺${(_totalRevenue / 1000000).toStringAsFixed(1)}M',
-            subtitle: '$_activeSellers aktif satıcı',
+            subtitle: '$_activeSellers ${_t(lang, 'aktif satıcı', 'active sellers')}',
             icon: Icons.store_outlined,
             trend: '%12.5',
             trendUp: true),
         StatCard(
-            title: 'Kullandırılan',
+            title: _t(lang, 'Kullandırılan', 'Disbursed'),
             value: '₺${(_disbursedAmount / 1000000).toStringAsFixed(1)}M',
-            subtitle: '${_credits.length} başvuru',
+            subtitle: '${_credits.length} ${_t(lang, 'başvuru', 'applications')}',
             icon: Icons.credit_card_outlined,
             trend: '%8.2',
             trendUp: true),
         StatCard(
-            title: 'Ort. GreenScore',
+            title: _t(lang, 'Ort. GreenScore', 'Avg GreenScore'),
             value: _avgGreenScore.toInt().toString(),
-            subtitle: 'Platform ortalaması',
+            subtitle: _t(lang, 'Platform ortalaması', 'Platform average'),
             icon: Icons.eco_outlined,
             trend: '%4.1',
             trendUp: true),
         StatCard(
-            title: 'Karbon Salınımı',
+            title: _t(lang, 'Karbon Salınımı', 'Carbon Emissions'),
             value: '${(_totalCarbon / 1000).toStringAsFixed(1)}t',
-            subtitle: 'Aylık toplam',
+            subtitle: _t(lang, 'Aylık toplam', 'Monthly total'),
             icon: Icons.co2_outlined,
             trend: '%18.3',
             trendUp: false),
@@ -448,6 +451,7 @@ class _SellerWelcomeBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().lang;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -455,13 +459,13 @@ class _SellerWelcomeBanner extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Mağazam',
+              Text(_t(lang, 'Mağazam', 'My Store'),
                   style: Theme.of(context).textTheme.displayMedium),
               const SizedBox(height: 2),
               Text(
                 store != null
                     ? '${store!.name} · ${store!.platform}'
-                    : 'Mağaza performansınız',
+                    : _t(lang, 'Mağaza performansınız', 'Your store performance'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -477,7 +481,7 @@ class _SellerWelcomeBanner extends StatelessWidget {
             children: [
               const Icon(Icons.store, size: 13, color: AppTheme.primary),
               const SizedBox(width: 4),
-              Text('Satıcı',
+              Text(_t(lang, 'Satıcı', 'Seller'),
                   style: const TextStyle(
                       fontSize: 11,
                       color: AppTheme.primary,
@@ -493,6 +497,7 @@ class _SellerWelcomeBanner extends StatelessWidget {
 class _BuyerWelcomeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().lang;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -503,7 +508,7 @@ class _BuyerWelcomeBanner extends StatelessWidget {
               Text('Dashboard',
                   style: Theme.of(context).textTheme.displayMedium),
               const SizedBox(height: 2),
-              Text('GreenLedger platformu genel bakış',
+              Text(_t(lang, 'GreenLedger platformu genel bakış', 'GreenLedger platform overview'),
                   style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
@@ -518,7 +523,7 @@ class _BuyerWelcomeBanner extends StatelessWidget {
             children: [
               const Icon(Icons.account_balance, size: 13, color: AppTheme.accent),
               const SizedBox(width: 4),
-              Text('Alıcı Platform',
+              Text(_t(lang, 'Alıcı Platform', 'Buyer Platform'),
                   style: TextStyle(
                       fontSize: 11,
                       color: AppTheme.accent,
@@ -537,15 +542,16 @@ class _MyStoreBanner extends StatelessWidget {
   final Seller store;
   const _MyStoreBanner({required this.store});
 
-  String get _scoreLabel {
-    if (store.greenScore >= 80) return 'Mükemmel';
-    if (store.greenScore >= 60) return 'İyi';
-    if (store.greenScore >= 40) return 'Orta';
-    return 'Gelişmeli';
+  String _scoreLabel(String lang) {
+    if (store.greenScore >= 80) return _t(lang, 'Mükemmel', 'Excellent');
+    if (store.greenScore >= 60) return _t(lang, 'İyi', 'Good');
+    if (store.greenScore >= 40) return _t(lang, 'Orta', 'Average');
+    return _t(lang, 'Gelişmeli', 'Needs Work');
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().lang;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -575,9 +581,9 @@ class _MyStoreBanner extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Ne Kadar Çevreciyim?',
-                      style: TextStyle(
+                    Text(
+                      _t(lang, 'Ne Kadar Çevreciyim?', 'How Green Am I?'),
+                      style: const TextStyle(
                           fontSize: 12,
                           color: Colors.white70,
                           fontWeight: FontWeight.w500),
@@ -617,7 +623,7 @@ class _MyStoreBanner extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          _scoreLabel,
+                          _scoreLabel(lang),
                           style: const TextStyle(
                               fontSize: 12,
                               color: Colors.white,
@@ -692,13 +698,13 @@ class _MyStoreBanner extends StatelessWidget {
             children: [
               _EcoBadge(
                 icon: Icons.recycling,
-                label: 'Eko Paket',
+                label: _t(lang, 'Eko Paket', 'Eco Pack'),
                 active: store.ecoPackaging,
               ),
               const SizedBox(width: 8),
               _EcoBadge(
                 icon: Icons.local_shipping_outlined,
-                label: 'Yeşil Kargo',
+                label: _t(lang, 'Yeşil Kargo', 'Green Ship'),
                 active: store.ecoLogistics,
               ),
               const Spacer(),
@@ -706,15 +712,15 @@ class _MyStoreBanner extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '%${store.interestRate.toStringAsFixed(1)} faiz',
+                    '%${store.interestRate.toStringAsFixed(1)} ${_t(lang, 'faiz', 'interest')}',
                     style: const TextStyle(
                         fontSize: 14,
                         color: Colors.white,
                         fontWeight: FontWeight.bold),
                   ),
-                  const Text(
-                    'Kredi faiziniz',
-                    style: TextStyle(fontSize: 10, color: Colors.white60),
+                  Text(
+                    _t(lang, 'Kredi faiziniz', 'Your credit rate'),
+                    style: const TextStyle(fontSize: 10, color: Colors.white60),
                   ),
                 ],
               ),
@@ -737,7 +743,7 @@ class _MyStoreBanner extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _getTip(),
+                    _getTip(lang),
                     style: const TextStyle(
                         fontSize: 11,
                         color: Colors.white70,
@@ -752,20 +758,30 @@ class _MyStoreBanner extends StatelessWidget {
     );
   }
 
-  String _getTip() {
+  String _getTip(String lang) {
     if (!store.ecoPackaging && !store.ecoLogistics) {
-      return 'Eko paketleme ve yeşil kargo ekleyerek skorunuzu 35 puan artırabilirsiniz.';
+      return _t(lang,
+        'Eko paketleme ve yeşil kargo ekleyerek skorunuzu 35 puan artırabilirsiniz.',
+        'Add eco packaging and green shipping to increase your score by 35 points.');
     }
     if (!store.ecoPackaging) {
-      return 'Eko paketlemeye geçerek GreenScore\'unuzu 15 puan artırın, faizinizi düşürün.';
+      return _t(lang,
+        'Eko paketlemeye geçerek GreenScore\'unuzu 15 puan artırın, faizinizi düşürün.',
+        'Switch to eco packaging to boost your GreenScore by 15 points and lower your interest rate.');
     }
     if (!store.ecoLogistics) {
-      return 'Yeşil kargo ile GreenScore\'unuzu 20 puan artırın ve daha düşük faiz kazanın.';
+      return _t(lang,
+        'Yeşil kargo ile GreenScore\'unuzu 20 puan artırın ve daha düşük faiz kazanın.',
+        'Use green shipping to increase your GreenScore by 20 points and earn a lower rate.');
     }
     if (store.returnRate > 5) {
-      return 'İade oranınızı düşürerek GreenScore\'unuzu daha da iyileştirebilirsiniz.';
+      return _t(lang,
+        'İade oranınızı düşürerek GreenScore\'unuzu daha da iyileştirebilirsiniz.',
+        'Reduce your return rate to further improve your GreenScore.');
     }
-    return 'Harika! Sürdürülebilirlik liderlerindensiniz. Sıralamayı kontrol edin.';
+    return _t(lang,
+      'Harika! Sürdürülebilirlik liderlerindensiniz. Sıralamayı kontrol edin.',
+      'Great! You are among the sustainability leaders. Check the rankings.');
   }
 }
 
@@ -827,6 +843,7 @@ class _BadgesSectionState extends State<_BadgesSection> {
   Widget build(BuildContext context) {
     final badges = BadgeService.getBadges(widget.store);
     final earned = badges.where((b) => b.earned).length;
+    final lang = context.watch<LanguageProvider>().lang;
     final shown = _expanded ? badges : badges.where((b) => b.earned).toList();
 
     return Card(
@@ -840,7 +857,7 @@ class _BadgesSectionState extends State<_BadgesSection> {
                 const Icon(Icons.emoji_events, color: AppTheme.accent, size: 18),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text('Başarılar',
+                  child: Text(_t(lang, 'Başarılar', 'Achievements'),
                       style: const TextStyle(
                           fontSize: 14, fontWeight: FontWeight.w600)),
                 ),
@@ -860,7 +877,7 @@ class _BadgesSectionState extends State<_BadgesSection> {
                 GestureDetector(
                   onTap: () => setState(() => _expanded = !_expanded),
                   child: Text(
-                    _expanded ? 'Gizle' : 'Tümünü Gör',
+                    _expanded ? _t(lang, 'Gizle', 'Hide') : _t(lang, 'Tümünü Gör', 'See All'),
                     style: const TextStyle(
                         fontSize: 11,
                         color: AppTheme.primary,
@@ -1042,7 +1059,7 @@ class _TopSellerTile extends StatelessWidget {
                     style: GoogleFonts.spaceGrotesk(
                         fontSize: 13, fontWeight: FontWeight.bold)),
               ]),
-              Text('%${seller.interestRate} faiz',
+              Text('%${seller.interestRate} ${context.watch<LanguageProvider>().lang == 'EN' ? 'int.' : 'faiz'}',
                   style: const TextStyle(
                       fontSize: 9, color: AppTheme.muted)),
             ],
@@ -1091,12 +1108,15 @@ class _CreditTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w500)),
-                Text(
-                    '${app.type == 'factoring' ? 'Faktoring' : 'Kredi'} · ${app.termDays}g',
+                Builder(builder: (ctx) {
+                  final l = ctx.watch<LanguageProvider>().lang;
+                  return Text(
+                    '${app.type == 'factoring' ? _t(l, 'Faktoring', 'Factoring') : _t(l, 'Kredi', 'Credit')} · ${app.termDays}${_t(l, 'g', 'd')}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        fontSize: 10, color: AppTheme.muted)),
+                        fontSize: 10, color: AppTheme.muted));
+                }),
               ],
             ),
           ),

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../services/data_service.dart';
 import '../services/gemini_service.dart';
 import '../widgets/common_widgets.dart';
 import '../theme/app_theme.dart';
+import '../providers/language_provider.dart';
+
+String _t(String lang, String tr, String en) => lang == 'EN' ? en : tr;
 
 class AIAdvisorScreen extends StatefulWidget {
   const AIAdvisorScreen({super.key});
@@ -39,9 +43,9 @@ class _AIAdvisorScreenState extends State<AIAdvisorScreen>
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().lang;
     return Column(
       children: [
-        // Header - sabit yükseklik
         Container(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Column(
@@ -51,7 +55,7 @@ class _AIAdvisorScreenState extends State<AIAdvisorScreen>
               Row(
                 children: [
                   Expanded(
-                    child: Text('AI Danışman',
+                    child: Text(_t(lang, 'AI Danışman', 'AI Advisor'),
                         style: Theme.of(context).textTheme.displayMedium),
                   ),
                   Container(
@@ -74,10 +78,10 @@ class _AIAdvisorScreenState extends State<AIAdvisorScreen>
               DropdownButtonFormField<Seller>(
                 value: _selectedSeller,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  hintText: 'Satıcı seçin',
-                  prefixIcon: Icon(Icons.store_outlined, color: AppTheme.muted, size: 18),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: InputDecoration(
+                  hintText: _t(lang, 'Satıcı seçin', 'Select seller'),
+                  prefixIcon: const Icon(Icons.store_outlined, color: AppTheme.muted, size: 18),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 ),
                 items: _sellers.map((s) => DropdownMenuItem(
                   value: s,
@@ -96,12 +100,12 @@ class _AIAdvisorScreenState extends State<AIAdvisorScreen>
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
                 labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-                tabs: const [
-                  Tab(icon: Icon(Icons.eco, size: 16), text: 'GreenScore'),
-                  Tab(icon: Icon(Icons.credit_card, size: 16), text: 'Risk'),
-                  Tab(icon: Icon(Icons.trending_up, size: 16), text: 'Koç'),
-                  Tab(icon: Icon(Icons.description, size: 16), text: 'Rapor'),
-                  Tab(icon: Icon(Icons.map_outlined, size: 16), text: 'Harita'),
+                tabs: [
+                  const Tab(icon: Icon(Icons.eco, size: 16), text: 'GreenScore'),
+                  const Tab(icon: Icon(Icons.credit_card, size: 16), text: 'Risk'),
+                  Tab(icon: const Icon(Icons.trending_up, size: 16), text: _t(lang, 'Koç', 'Coach')),
+                  Tab(icon: const Icon(Icons.description, size: 16), text: _t(lang, 'Rapor', 'Report')),
+                  Tab(icon: const Icon(Icons.map_outlined, size: 16), text: _t(lang, 'Harita', 'Roadmap')),
                 ],
               ),
             ],
@@ -131,6 +135,7 @@ class _AIAdvisorScreenState extends State<AIAdvisorScreen>
 class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().lang;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -139,11 +144,11 @@ class _EmptyState extends StatelessWidget {
           children: [
             const Icon(Icons.psychology_outlined, size: 56, color: AppTheme.border),
             const SizedBox(height: 12),
-            Text('AI Danışmanınız Hazır',
+            Text(_t(lang, 'AI Danışmanınız Hazır', 'Your AI Advisor is Ready'),
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 6),
-            const Text('Yukarıdan satıcı seçin',
-                style: TextStyle(color: AppTheme.muted, fontSize: 13)),
+            Text(_t(lang, 'Yukarıdan satıcı seçin', 'Select a seller above'),
+                style: const TextStyle(color: AppTheme.muted, fontSize: 13)),
             const SizedBox(height: 20),
             Wrap(
               spacing: 8, runSpacing: 8,

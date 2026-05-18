@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../models/badge_model.dart';
 import '../services/data_service.dart';
 import '../widgets/common_widgets.dart';
 import '../theme/app_theme.dart';
+import '../providers/language_provider.dart';
+
+String _t(String lang, String tr, String en) => lang == 'EN' ? en : tr;
 
 class PortfolioScreen extends StatefulWidget {
   const PortfolioScreen({super.key});
@@ -42,7 +46,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const LoadingWidget(message: 'Portfolio yükleniyor...');
+    final lang = context.watch<LanguageProvider>().lang;
+    if (_loading) return LoadingWidget(message: _t(lang, 'Portfolio yükleniyor...', 'Loading portfolio...'));
 
     return RefreshIndicator(
       color: AppTheme.primary,
@@ -61,7 +66,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Portfolio', style: Theme.of(context).textTheme.displayMedium),
-                      Text('Satıcı risk & kredi görünümü',
+                      Text(_t(lang, 'Satıcı risk & kredi görünümü', 'Seller risk & credit overview'),
                           style: Theme.of(context).textTheme.bodySmall),
                     ],
                   ),
@@ -75,8 +80,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   child: Row(children: [
                     const Icon(Icons.account_balance, size: 13, color: AppTheme.accent),
                     const SizedBox(width: 4),
-                    Text('Alıcı Platform',
-                        style: TextStyle(fontSize: 11, color: AppTheme.accent, fontWeight: FontWeight.w600)),
+                    Text(_t(lang, 'Alıcı Platform', 'Buyer Platform'),
+                        style: const TextStyle(fontSize: 11, color: AppTheme.accent, fontWeight: FontWeight.w600)),
                   ]),
                 ),
               ],
@@ -84,25 +89,24 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
             const SizedBox(height: 16),
 
-            // Özet Kartlar
             Row(
               children: [
                 Expanded(child: _SummaryCard(
-                  label: 'Toplam Exposure',
+                  label: _t(lang, 'Toplam Exposure', 'Total Exposure'),
                   value: '₺${(_totalExposure / 1000000).toStringAsFixed(1)}M',
                   icon: Icons.account_balance_wallet_outlined,
                   color: AppTheme.primary,
                 )),
                 const SizedBox(width: 10),
                 Expanded(child: _SummaryCard(
-                  label: 'Ort. GreenScore',
+                  label: _t(lang, 'Ort. GreenScore', 'Avg GreenScore'),
                   value: _avgScore.toInt().toString(),
                   icon: Icons.eco_outlined,
                   color: _avgScore >= 70 ? AppTheme.primary : AppTheme.accent,
                 )),
                 const SizedBox(width: 10),
                 Expanded(child: _SummaryCard(
-                  label: 'Aktif Satıcı',
+                  label: _t(lang, 'Aktif Satıcı', 'Active Sellers'),
                   value: '$_activeCount',
                   icon: Icons.store_outlined,
                   color: AppTheme.chart3,
@@ -112,10 +116,9 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
             const SizedBox(height: 20),
 
-            // Risk Dağılımı
-            Text('Risk Dağılımı', style: Theme.of(context).textTheme.titleMedium),
+            Text(_t(lang, 'Risk Dağılımı', 'Risk Distribution'), style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
-            Text('Satıcıların GreenScore\'a göre risk segmentasyonu',
+            Text(_t(lang, 'Satıcıların GreenScore\'a göre risk segmentasyonu', 'Seller risk segmentation by GreenScore'),
                 style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 12),
             _RiskDistributionBar(
@@ -128,9 +131,9 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _RiskLegend(color: const Color(0xFF16A34A), label: 'Düşük Risk', count: _low.length),
-                _RiskLegend(color: AppTheme.accent, label: 'Orta Risk', count: _mid.length),
-                _RiskLegend(color: AppTheme.destructive, label: 'Yüksek Risk', count: _high.length),
+                _RiskLegend(color: const Color(0xFF16A34A), label: _t(lang, 'Düşük Risk', 'Low Risk'), count: _low.length),
+                _RiskLegend(color: AppTheme.accent, label: _t(lang, 'Orta Risk', 'Mid Risk'), count: _mid.length),
+                _RiskLegend(color: AppTheme.destructive, label: _t(lang, 'Yüksek Risk', 'High Risk'), count: _high.length),
               ],
             ),
 
@@ -141,10 +144,9 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
             const SizedBox(height: 24),
 
-            // Düşük Risk
             if (_low.isNotEmpty) ...[
               _RiskGroupHeader(
-                label: 'Düşük Risk',
+                label: _t(lang, 'Düşük Risk', 'Low Risk'),
                 count: _low.length,
                 color: const Color(0xFF16A34A),
                 icon: Icons.check_circle_outline,
@@ -154,10 +156,9 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
               const SizedBox(height: 16),
             ],
 
-            // Orta Risk
             if (_mid.isNotEmpty) ...[
               _RiskGroupHeader(
-                label: 'Orta Risk',
+                label: _t(lang, 'Orta Risk', 'Mid Risk'),
                 count: _mid.length,
                 color: AppTheme.accent,
                 icon: Icons.warning_amber_outlined,
@@ -167,10 +168,9 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
               const SizedBox(height: 16),
             ],
 
-            // Yüksek Risk
             if (_high.isNotEmpty) ...[
               _RiskGroupHeader(
-                label: 'Yüksek Risk',
+                label: _t(lang, 'Yüksek Risk', 'High Risk'),
                 count: _high.length,
                 color: AppTheme.destructive,
                 icon: Icons.error_outline,
