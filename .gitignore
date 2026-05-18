@@ -49,6 +49,5 @@ app.*.map.json
 CLAUDE.md
 
 # API keys / secrets
-*.env
-.env*
+.env
 secrets.dart
