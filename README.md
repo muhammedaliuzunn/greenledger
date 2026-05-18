@@ -6,7 +6,7 @@
 
 ### Sürdürülebilir Finans Platformu
 
-*Çevreci davran, daha ucuza finanse et.*
+*Ticaretin yeşili finansın geleceği.*
 
 > 🇹🇷 E-ticaret satıcılarının sürdürülebilirlik skorunu yapay zeka ile analiz eden, yeşil davranışı finansal avantaja dönüştüren fintech platformu.
 >
